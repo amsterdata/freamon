@@ -46,29 +46,30 @@ def main(yaml_file):
 
     with eyes.pipeline_from_py_file(pipeline_path, cmd_args=synthetic_cmd_args) as pipeline:
 
-        issue_detected = False
+        # issue_detected = False
+        #
+        # for issue_name, issue_detector in issues_by_name.items():
+        #     if issues_to_detect is not None and issue_name in issues_to_detect:
+        #         logging.info(f'Looking for issue {issue_name}...')
+        #         issue = pipeline.detect_issue(issue_detector)
+        #         if not issue.is_present:
+        #             logging.info('Not found.')
+        #         else:
+        #             logging.warning(
+        #                 '\x1b[31;21m' + \
+        #                 '\n\n' + \
+        #                 '-' * 80 + \
+        #                 f'\n{issue_detector.error_msg(issue)}\n' + \
+        #                 '-' * 80 + '\n\x1b[0m')
+        #             issue_detected = True
 
-        for issue_name, issue_detector in issues_by_name.items():
-            if issues_to_detect is not None and issue_name in issues_to_detect:
-                logging.info(f'Looking for issue {issue_name}...')
-                issue = pipeline.detect_issue(issue_detector)
-                if not issue.is_present:
-                    logging.info('Not found.')
-                else:
-                    logging.warning(
-                        '\x1b[31;21m' + \
-                        '\n\n' + \
-                        '-' * 80 + \
-                        f'\n{issue_detector.error_msg(issue)}\n' + \
-                        '-' * 80 + '\n\x1b[0m')
-                    issue_detected = True
-
+        # TODO ADJUST
         if 'data-compliance' in pipeline_config:
             for refinement in pipeline_config['data-compliance']:
                 refinement_info = refinement['refinement']
                 if refinement_info['name'] == 'input_usage':
                     logging.info('Computing usage information for input records')
-                    pipeline.compute(InputUsage())
+                    pipeline.compute(RecordUsage())
                 if refinement_info['name'] == 'data_valuation':
                     if 'params' in refinement_info:
                         k = refinement_info['params']['k']
@@ -86,21 +87,21 @@ def main(yaml_file):
                                 f' and {non_protected_class} as non-protected class')
                     pipeline.compute(FairnessMetrics(sensitive_attribute, non_protected_class))
 
-    if issue_detected:
-        logging.error(
-            '\x1b[31;21m' + \
-            '\n\n' + \
-            '-' * 80 + \
-            '\n Pipeline fails ArgusEyes screening\n' + \
-            '-' * 80 + '\n\x1b[0m')
-        sys.exit(os.EX_DATAERR)
-    else:
-        logging.info(
-            '\x1b[33;92m' + \
-            '\n\n' + \
-            '-' * 80 + \
-            '\n Pipeline passes ArgusEyes screening\n' + \
-            '-' * 80 + '\n\x1b[0m')
+    # if issue_detected:
+    #     logging.error(
+    #         '\x1b[31;21m' + \
+    #         '\n\n' + \
+    #         '-' * 80 + \
+    #         '\n Pipeline fails ArgusEyes screening\n' + \
+    #         '-' * 80 + '\n\x1b[0m')
+    #     sys.exit(os.EX_DATAERR)
+    # else:
+    #     logging.info(
+    #         '\x1b[33;92m' + \
+    #         '\n\n' + \
+    #         '-' * 80 + \
+    #         '\n Pipeline passes ArgusEyes screening\n' + \
+    #         '-' * 80 + '\n\x1b[0m')
 
         sys.exit(os.EX_OK)
 

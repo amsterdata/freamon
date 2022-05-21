@@ -74,8 +74,8 @@ class DataValuation(ComplianceData):
         self.log_tag('reviews.data_valuation.operator_id', fact_table_source.operator_id)
         self.log_tag('reviews.data_valuation.k', self.k)
         self.log_tag('reviews.data_valuation.num_test_samples', self.num_test_samples)
-        self.log_tag('reviews.data_valuation.data_file', 'input-with-shapley-values.parquet')
-        self.log_as_parquet_file(data, 'input-with-shapley-values.parquet')
+        #self.log_tag('reviews.data_valuation.data_file', 'input-with-shapley-values.parquet')
+        #self.log_as_parquet_file(data, 'input-with-shapley-values.parquet')
 
         return Source(fact_table_source.operator_id, fact_table_source.source_type, data)
 

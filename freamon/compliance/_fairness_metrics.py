@@ -10,8 +10,6 @@ class FairnessMetrics(ComplianceData):
         self.sensitive_attribute = sensitive_attribute
         self.non_protected_class = non_protected_class
 
-    # TODO this assumes binary classification and currently only works attributes of the FACT table
-    # TODO this needs some refactoring
     def _compute(self, pipeline):
         fact_table_index, fact_table_source = [(index, test_source) for index, test_source in enumerate(pipeline.test_sources)
                                                if test_source.source_type == SourceType.ENTITIES][0]
