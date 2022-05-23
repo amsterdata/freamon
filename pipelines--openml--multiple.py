@@ -54,7 +54,6 @@ def get_flow(openml_id, numerical_columns, categorical_columns):
         def another_imputer(df_with_categorical_columns):
             return df_with_categorical_columns.fillna('__missing__')
 
-        applicable_on_dataframe = True
         num_pipe = Pipeline([('imputer', SimpleImputer()),
                              ('standardscaler', StandardScaler())])
         cat_pipe = Pipeline([('anothersimpleimputer', FunctionTransformer(another_imputer)),
