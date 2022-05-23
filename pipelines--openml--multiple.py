@@ -187,7 +187,7 @@ def get_dataset(openml_id, seed):
         test_labels = np.array(data_test[label_column] == "b'2'")
 
     else:
-        raise ValueError("Invalid dataset id!")
+        raise ValueError(f"Invalid dataset id {openml_id}!")
 
     return train, train_labels, test, test_labels, numerical_columns, categorical_columns
 
