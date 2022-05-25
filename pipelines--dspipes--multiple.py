@@ -154,7 +154,7 @@ def get_dataset(name):
         test_labels = label_binarize(test['income-per-year'], classes=['<=50K.', '>50K.']).ravel()
 
         numerical_columns = ['age', 'capital-gain', 'capital-loss']
-        categorical_columns = ['workclass', 'education', 'marital-status']
+        categorical_columns = ['workclass', 'education', 'marital-status', 'race']
 
         return train, train_labels, test, test_labels, numerical_columns, categorical_columns
 
