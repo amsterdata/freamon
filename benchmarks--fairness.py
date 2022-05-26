@@ -101,8 +101,6 @@ def compute_opt(pipeline, sensitive_attribute, non_protected_class):
         (index, test_source) for index, test_source in enumerate(pipeline.test_sources)
         if test_source.source_type == SourceType.ENTITIES][0]
 
-    fact_table_lineage = pipeline.test_source_lineage[fact_table_index]
-
     is_in_non_protected = list(fact_table_source.data[sensitive_attribute] == non_protected_class)
 
     y_pred = pipeline.outputs[Output.Y_PRED]

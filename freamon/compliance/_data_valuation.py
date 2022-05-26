@@ -1,8 +1,11 @@
 import numpy as np
+import time
+import logging
 from numba import njit, prange
 
 from freamon.compliance import ComplianceData
 from freamon.templates import SourceType, Source, Output
+
 
 # removed cache=True because of https://github.com/numba/numba/issues/4908 need a workaround soon
 @njit(fastmath=True, parallel=True)
@@ -39,49 +42,37 @@ class DataValuation(ComplianceData):
         self.num_test_samples = num_test_samples
 
     def _compute(self, pipeline):
+
+        data_valuation_start = time.time()
+
         X_train = pipeline.outputs[Output.X_TRAIN]
         X_test = pipeline.outputs[Output.X_TEST]
         y_train = pipeline.outputs[Output.Y_TRAIN]
         y_test = pipeline.outputs[Output.Y_TEST]
 
-        X_test_sampled = X_test[:self.num_test_samples, :]
-        y_test_sampled = y_test[:self.num_test_samples, :]
+        X_test_sampled = X_test[:self.num_test_samples]
+        y_test_sampled = y_test[:self.num_test_samples]
 
         shapley_values = _compute_shapley_values(X_train,
                                                  np.squeeze(y_train),
                                                  X_test_sampled,
                                                  np.squeeze(y_test_sampled), self.k)
 
-        lineage_X_train = pipeline.output_lineage[Output.X_TRAIN]    
+        lineage_X_train = pipeline.output_lineage[Output.X_TRAIN]
 
-        fact_table_index, fact_table_source = [(index, test_source) for index, test_source in enumerate(pipeline.test_sources)
-                                               if test_source.source_type == SourceType.ENTITIES][0]
+        fact_table_index, fact_table_source = [
+            (index, train_source) for index, train_source in enumerate(pipeline.train_sources)
+            if train_source.source_type == SourceType.ENTITIES][0]
 
-        shapley_values_by_row_id = {}
+        fact_table_operator_id = fact_table_source.operator_id
+        assigned_shapley_values = np.zeros(len(fact_table_source.data))
 
-        for polynomial, shapley_value in zip(lineage_X_train, shapley_values):
+        for train_index, polynomial in enumerate(lineage_X_train):
             for entry in polynomial:
-                if entry.operator_id == fact_table_source.operator_id:
-                    shapley_values_by_row_id[entry.row_id] = shapley_value
+                if entry.operator_id == fact_table_operator_id:
+                    assigned_shapley_values[entry.row_id] = shapley_values[train_index]
 
-        data = fact_table_source.data
-        fact_table_lineage = pipeline.test_source_lineage[fact_table_index]
+        data_valuation_duration = time.time() - data_valuation_start
+        logging.info(f'---RUNTIME: Data valuation took {data_valuation_duration * 1000} ms')
 
-        for row_index, row in data.iterrows():                
-            data.at[row_index, '__arguseyes__shapley_value'] = \
-                self._find_shapley(fact_table_lineage[row_index], shapley_values_by_row_id)
-
-        self.log_tag('reviews.data_valuation.operator_id', fact_table_source.operator_id)
-        self.log_tag('reviews.data_valuation.k', self.k)
-        self.log_tag('reviews.data_valuation.num_test_samples', self.num_test_samples)
-        #self.log_tag('reviews.data_valuation.data_file', 'input-with-shapley-values.parquet')
-        #self.log_as_parquet_file(data, 'input-with-shapley-values.parquet')
-
-        return Source(fact_table_source.operator_id, fact_table_source.source_type, data)
-
-    @staticmethod
-    def _find_shapley(polynomial, shapley_values_by_row_id):
-        for entry in polynomial:
-            if entry.row_id in shapley_values_by_row_id:
-                return shapley_values_by_row_id[entry.row_id]
-        return 0.0
+        return assigned_shapley_values
