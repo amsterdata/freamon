@@ -2,10 +2,9 @@ import numpy as np
 
 
 # Create a matrix from wrapped numpy arrays (workaround, will be fixed later)
-def copy_to_matrix(wrapped):
-    matrix = np.zeros((len(wrapped), len(wrapped[0].flatten())), dtype='float64')
+def copy_to_matrix(wrapped_rows):
 
-    for i in range(0, len(wrapped)):
-        matrix[i, :] = wrapped[i].flatten()[:]
+    #stacked_matrix = np.vstack([arr.flatten() for arr in wrapped])
+    #return stacked_matrix
 
-    return matrix
+    return [row.flatten() for row in wrapped_rows]

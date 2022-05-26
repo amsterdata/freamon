@@ -171,7 +171,7 @@ def get_dataset(openml_id, seed):
         test_labels = np.array(data_test[label_column] == "b'P'")
 
     elif openml_id == '1461':
-        # Bankmarketing dataset (44)
+        # Bankmarketing dataset (1461)
         data = pd.read_csv('datasets/bankmarketing/dataset_1461_bankmarketing.csv')
         label_column = 'Class'
         numerical_columns = ['V1', 'V6', 'V10', 'V12', 'V13', 'V14', 'V15']
