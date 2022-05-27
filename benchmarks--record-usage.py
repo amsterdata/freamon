@@ -5,7 +5,7 @@ from freamon import Freamon
 from freamon.templates import Output
 
 
-frm = Freamon('freamon-benchmarks-record-usage', './mlruns')
+frm = Freamon()
 
 captured_pipeline = None
 

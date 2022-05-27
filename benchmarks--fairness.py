@@ -5,7 +5,7 @@ from freamon import Freamon
 from freamon.templates import Output, SourceType
 
 
-frm = Freamon('freamon-benchmarks-fairness', './mlruns')
+frm = Freamon()
 
 captured_pipeline = None
 

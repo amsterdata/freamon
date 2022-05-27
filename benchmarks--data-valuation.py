@@ -7,7 +7,7 @@ from freamon import Freamon
 from freamon.templates import Output, SourceType
 
 
-frm = Freamon('freamon-benchmarks-data-valuation', './mlruns')
+frm = Freamon()
 
 captured_pipeline = None
 
@@ -54,8 +54,8 @@ def data_valuation_naive(pipeline, num_test_samples, k):
     y_train = pipeline.outputs[Output.Y_TRAIN]
     y_test = pipeline.outputs[Output.Y_TEST]
 
-    X_test_sampled = X_test[:num_test_samples, :]
-    y_test_sampled = y_test[:num_test_samples, :]
+    X_test_sampled = X_test[:num_test_samples]
+    y_test_sampled = y_test[:num_test_samples]
 
     shapley_values = _compute_shapley_values(X_train,
                                              np.squeeze(y_train),
@@ -95,8 +95,8 @@ def data_valuation_opt(pipeline, num_test_samples, k):
     y_train = pipeline.outputs[Output.Y_TRAIN]
     y_test = pipeline.outputs[Output.Y_TEST]
 
-    X_test_sampled = X_test[:num_test_samples, :]
-    y_test_sampled = y_test[:num_test_samples, :]
+    X_test_sampled = X_test[:num_test_samples]
+    y_test_sampled = y_test[:num_test_samples]
 
     shapley_values = _compute_shapley_values(X_train,
                                              np.squeeze(y_train),
