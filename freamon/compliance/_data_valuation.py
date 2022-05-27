@@ -4,7 +4,7 @@ import logging
 from numba import njit, prange
 
 from freamon.compliance import ComplianceData
-from freamon.templates import SourceType, Source, Output
+from freamon.templates import SourceType, Output
 
 
 # removed cache=True because of https://github.com/numba/numba/issues/4908 need a workaround soon
