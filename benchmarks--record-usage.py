@@ -1,5 +1,7 @@
 import sys
 import time
+import warnings
+warnings.filterwarnings("ignore")
 
 from freamon import Freamon
 from freamon.templates import Output
