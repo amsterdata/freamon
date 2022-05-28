@@ -175,6 +175,23 @@ def get_dataset(name):
 
         return train, train_labels, test, test_labels, numerical_columns, categorical_columns
 
+    elif name == 'cardio-sampled':
+
+        numerical_columns = ['age', 'height', 'weight', 'ap_hi', 'ap_lo']
+        categorical_columns = ['gender', 'cholesterol', 'gluc', 'smoke', 'alco', 'active']
+
+        data = pd.read_csv('datasets/cardio/cardio.csv', sep=';', engine='python')
+        data = data.head(10000)
+
+        for categorical_column in categorical_columns:
+            data[categorical_column] = data[categorical_column].astype(str)
+
+        train, test = train_test_split(data, test_size=0.20, random_state=42)
+
+        train_labels = np.array(train['cardio'])
+        test_labels = np.array(test['cardio'])
+
+        return train, train_labels, test, test_labels, numerical_columns, categorical_columns
 
     elif name == 'tweets':
 
