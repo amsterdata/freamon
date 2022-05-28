@@ -180,8 +180,7 @@ def get_dataset(name):
         numerical_columns = ['age', 'height', 'weight', 'ap_hi', 'ap_lo']
         categorical_columns = ['gender', 'cholesterol', 'gluc', 'smoke', 'alco', 'active']
 
-        data = pd.read_csv('datasets/cardio/cardio.csv', sep=';', engine='python')
-        data = data.head(10000)
+        data = pd.read_csv('datasets/cardio/cardio-sampled.csv', sep=';', engine='python')
 
         for categorical_column in categorical_columns:
             data[categorical_column] = data[categorical_column].astype(str)
