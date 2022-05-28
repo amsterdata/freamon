@@ -1,4 +1,4 @@
-import numpy as np
+#import numpy as np
 
 from freamon.compliance import ComplianceData
 from freamon.templates import SourceType, Output
