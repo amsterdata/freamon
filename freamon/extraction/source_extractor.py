@@ -26,7 +26,9 @@ def _extract_sources(operator_type, dag, dag_node_to_lineage_df):
     for source_id, data in raw_sources.items():
  
         lineage = list(data['mlinspect_lineage'])
-        data = data.drop(columns=['mlinspect_lineage'], inplace=False)
+        # Would be cleaner to drop lineage, but creates an unnecessary copy
+        # TODO We could return a VIEW here
+        # data = data.drop(columns=['mlinspect_lineage'], inplace=False)
 
         source_lineage.append(lineage)
 

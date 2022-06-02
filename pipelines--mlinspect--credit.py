@@ -8,6 +8,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler, FunctionTransformer, OneHotEncoder, label_binarize
 from sklearn.compose import ColumnTransformer
 
+
 def load_train_and_test_data(adult_train_location, adult_test_location):
 
     columns = ['age', 'workclass', 'fnlwgt', 'education', 'education-num', 'marital-status', 'occupation',
@@ -71,6 +72,7 @@ def random_subset(arr):
     size = np.random.randint(low=1, high=len(arr)+1)
     choice = np.random.choice(arr, size=size, replace=False)
     return [str(item) for item in choice]
+
 
 # Make sure this code is not executed during imports
 if sys.argv[0] == 'eyes' or __name__ == "__main__":

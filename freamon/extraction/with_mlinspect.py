@@ -64,7 +64,13 @@ def _execute_pipeline(inspector: PipelineInspector):
     dag_node_to_lineage_df = {
         node: node_results[lineage_inspection]
         for node, node_results in result.dag_node_to_inspection_results.items()
-    }    
+    }
+
+    # for k, v in dag_node_to_lineage_df.items():
+    #     print(k.operator_info.operator)
+    #     if v is not None:
+    #         print(v.columns)
+
 
     return _from_dag_and_lineage(result.dag, dag_node_to_lineage_df, log_results=False)
 

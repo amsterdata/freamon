@@ -1,13 +1,35 @@
 from mlinspect.inspections._inspection_input import OperatorType
+from mlinspect.inspections._lineage import LineageId
 
 import logging
+
+
+def to_entry(serialised):
+    parts = serialised.split(',')
+    return LineageId(int(parts[0]), int(parts[1]))
+
+
+def to_polynomial(serialised):
+    print(serialised, type(serialised))
+    translation_table = dict.fromkeys(map(ord, '()'), None)
+    no_brackets = serialised.translate(translation_table)
+    tokens = no_brackets.split(";")
+    return [to_entry(token) for token in tokens]
 
 
 def _sources_with_one_to_one_correspondence_to_feature_vectors(feature_matrix_lineage_per_row):
     rows_from_operator = {}
     operators_with_duplicates = set()
 
-    for polynomial in feature_matrix_lineage_per_row:
+    print(type(feature_matrix_lineage_per_row))
+
+    #for elem in feature_matrix_lineage_per_row:
+    #    print(elem)
+
+    polynomials = [to_polynomial(elem) for elem in feature_matrix_lineage_per_row]
+
+    #for polynomial in feature_matrix_lineage_per_row:
+    for polynomial in polynomials:
         for entry in polynomial:
 
             if entry.operator_id not in operators_with_duplicates:
@@ -68,7 +90,17 @@ def determine_fact_table_source_id(raw_sources, data_op, dag_node_to_lineage_df)
     # Heuristic 1: Fact table should have 1:1 correspondence between input tuples and features
     # TODO this is not the case for fork-pipelines!
     feature_matrix_lineage = dag_node_to_lineage_df[data_op]
-    feature_matrix_lineage_per_row = list(feature_matrix_lineage['mlinspect_lineage'])
+
+    print('DATA OP', str(data_op.operator_info.operator), type(data_op.operator_info.operator))
+
+    lineage_column = 'mlinspect_lineage'
+
+    # TODO Remove this once Stefan fixed renaming
+    if data_op.operator_info.operator in [OperatorType.TRAIN_DATA, OperatorType.TRAIN_LABELS,
+                   OperatorType.TEST_DATA, OperatorType.TEST_LABELS]:
+        lineage_column = list(feature_matrix_lineage.columns)[1]
+
+    feature_matrix_lineage_per_row = list(feature_matrix_lineage[lineage_column])
     sources_one_to_one = _sources_with_one_to_one_correspondence_to_feature_vectors(feature_matrix_lineage_per_row)
 
     logging.info(f'sources_one_to_one {len(sources_one_to_one)}')
