@@ -95,10 +95,10 @@ def determine_fact_table_source_id(raw_sources, data_op, dag_node_to_lineage_df)
 
     lineage_column = 'mlinspect_lineage'
 
-    # TODO Remove this once Stefan fixed renaming
-    if data_op.operator_info.operator in [OperatorType.TRAIN_DATA, OperatorType.TRAIN_LABELS,
-                   OperatorType.TEST_DATA, OperatorType.TEST_LABELS]:
-        lineage_column = list(feature_matrix_lineage.columns)[1]
+    # TODO I think this commented out code can be removed, it should work now
+    # if data_op.operator_info.operator in [OperatorType.TRAIN_DATA, OperatorType.TRAIN_LABELS,
+    #                OperatorType.TEST_DATA, OperatorType.TEST_LABELS]:
+    #     lineage_column = list(feature_matrix_lineage.columns)[1]
 
     feature_matrix_lineage_per_row = list(feature_matrix_lineage[lineage_column])
     sources_one_to_one = _sources_with_one_to_one_correspondence_to_feature_vectors(feature_matrix_lineage_per_row)
