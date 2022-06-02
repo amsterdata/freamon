@@ -48,6 +48,8 @@ def _execute_pipeline(inspector: PipelineInspector):
 
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
+    runtimes = {}
+
     logging.info('Executing instrumented user pipeline with mlinspect')
     with tempfile.TemporaryDirectory() as tmpdirname:
         logging.info('Redirecting the pipeline\'s stdout to reviews-pipeline-output.txt')
@@ -60,22 +62,28 @@ def _execute_pipeline(inspector: PipelineInspector):
                 mlinspect_duration = time.time() - mlinspect_start
 
     logging.info(f'---RUNTIME: Instrumented execution took {mlinspect_duration * 1000} ms')
+    runtimes['instrumentation'] = mlinspect_duration * 1000
 
     dag_node_to_intermediates = {
         node: node_results[lineage_inspection]
         for node, node_results in result.dag_node_to_inspection_results.items()
     }
 
+    provenance_conversion_start = time.time()
     dag_node_to_provenance = {
         node: to_polynomials(node_result['mlinspect_lineage'])
         for node, node_result in dag_node_to_intermediates.items() if node_result is not None
     }
+    provenance_conversion_duration = time.time() - provenance_conversion_start
+    runtimes['provenance_conversion'] = provenance_conversion_duration * 1000
 
-    return _from_dag_and_lineage(result.dag, dag_node_to_intermediates, dag_node_to_provenance, log_results=False)
+    pipeline = _from_dag_and_lineage(result.dag, dag_node_to_intermediates, dag_node_to_provenance, runtimes)
+
+    return pipeline, runtimes
 
 
 
-def _from_dag_and_lineage(dag, dag_node_to_intermediates, dag_node_to_provenance, log_results=True):
+def _from_dag_and_lineage(dag, dag_node_to_intermediates, dag_node_to_provenance, runtimes):
     artifact_extraction_start = time.time()
 
     logging.info(f'Identifying training sources')
@@ -84,6 +92,7 @@ def _from_dag_and_lineage(dag, dag_node_to_intermediates, dag_node_to_provenance
         source_extractor.extract_train_sources(dag, dag_node_to_intermediates, dag_node_to_provenance)
     train_source_identification_duration = time.time() - train_source_identification_start
     logging.info(f'---RUNTIME: Artifact extraction > Train source extraction took {train_source_identification_duration * 1000} ms')
+    runtimes['train_source_extraction'] = train_source_identification_duration * 1000
 
     logging.info(f'Identifying test sources')
     test_source_identification_start = time.time()
@@ -91,6 +100,7 @@ def _from_dag_and_lineage(dag, dag_node_to_intermediates, dag_node_to_provenance
         source_extractor.extract_test_sources(dag, dag_node_to_intermediates, dag_node_to_provenance)
     test_source_identification_duration = time.time() - test_source_identification_start
     logging.info(f'---RUNTIME: Artifact extraction > Test source extraction took {test_source_identification_duration * 1000} ms')
+    runtimes['test_source_extraction'] = test_source_identification_duration * 1000
 
     feature_matrix_extraction_start = time.time()
     X_train, lineage_X_train = \
@@ -101,6 +111,7 @@ def _from_dag_and_lineage(dag, dag_node_to_intermediates, dag_node_to_provenance
     logging.info(f'Extracted feature matrix X_test with {len(X_test)} rows and {len(X_test[0])} columns')
     feature_matrix_extraction_duration = time.time() - feature_matrix_extraction_start
     logging.info(f'---RUNTIME: Artifact extraction > Feature matrix extraction took {feature_matrix_extraction_duration * 1000} ms')
+    runtimes['feature_matrix_extraction'] = feature_matrix_extraction_duration * 1000
 
     label_prediction_extraction_start = time.time()
     y_train, lineage_y_train = \
@@ -111,6 +122,7 @@ def _from_dag_and_lineage(dag, dag_node_to_intermediates, dag_node_to_provenance
         feature_matrix_extractor.extract_predicted_labels(dag_node_to_intermediates, dag_node_to_provenance)
     label_prediction_extraction_duration = time.time() - label_prediction_extraction_start
     logging.info(f'---RUNTIME: Artifact extraction > Label and prediction extraction took {label_prediction_extraction_duration * 1000} ms')
+    runtimes['label_and_prediction_extraction'] = label_prediction_extraction_duration * 1000
 
     logging.info(f'Extracted y_train, y_test and y_pred')
 
