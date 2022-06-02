@@ -66,11 +66,6 @@ def _execute_pipeline(inspector: PipelineInspector):
         for node, node_results in result.dag_node_to_inspection_results.items()
     }
 
-    for node, node_result in dag_node_to_intermediates.items():
-        print(node.operator_info.operator, type(node_result))
-        if node_result is not None:
-            print(node_result.columns)
-
     dag_node_to_provenance = {
         node: to_polynomials(node_result['mlinspect_lineage'])
         for node, node_result in dag_node_to_intermediates.items() if node_result is not None
