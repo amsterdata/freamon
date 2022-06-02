@@ -6,26 +6,28 @@ from freamon.extraction.dag_extraction import find_dag_node_by_type, find_source
 from freamon.extraction.heuristics.fact_table_from_star_schema import determine_fact_table_source_id
 
 
-def extract_train_sources(dag, dag_node_to_lineage_df):
-    return _extract_sources(OperatorType.TRAIN_DATA, dag, dag_node_to_lineage_df)
+def extract_train_sources(dag, dag_node_to_intermediates, dag_node_to_provenance):
+    return _extract_sources(OperatorType.TRAIN_DATA, dag, dag_node_to_intermediates, dag_node_to_provenance)
 
 
-def extract_test_sources(dag, dag_node_to_lineage_df):
-    return _extract_sources(OperatorType.TEST_DATA, dag, dag_node_to_lineage_df)
+def extract_test_sources(dag, dag_node_to_intermediates, dag_node_to_provenance):
+    return _extract_sources(OperatorType.TEST_DATA, dag, dag_node_to_intermediates, dag_node_to_provenance)
 
 
-def _extract_sources(operator_type, dag, dag_node_to_lineage_df):
-    data_op = find_dag_node_by_type(operator_type, dag_node_to_lineage_df.keys())
-    raw_sources = find_source_datasets(data_op.node_id, dag, dag_node_to_lineage_df)
+def _extract_sources(operator_type, dag, dag_node_to_intermediates, dag_node_to_provenance):
+    data_op = find_dag_node_by_type(operator_type, dag_node_to_intermediates.keys())
+    raw_sources, source_provenances = \
+        find_source_datasets(data_op.node_id, dag, dag_node_to_intermediates, dag_node_to_provenance)
 
-    fact_table_source_id = determine_fact_table_source_id(raw_sources, data_op, dag_node_to_lineage_df)
+    fact_table_source_id = \
+        determine_fact_table_source_id(raw_sources, data_op, dag_node_to_provenance)
 
     sources = []
     source_lineage = []
 
     for source_id, data in raw_sources.items():
- 
-        lineage = list(data['mlinspect_lineage'])
+
+        lineage = source_provenances[source_id]
         # Would be cleaner to drop lineage, but creates an unnecessary copy
         # TODO We could return a VIEW here
         # data = data.drop(columns=['mlinspect_lineage'], inplace=False)

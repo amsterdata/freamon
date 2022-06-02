@@ -10,11 +10,12 @@ def find_dag_node_by_type(op_type, node_list):
     raise ValueError('Unable to find DAG node')
 
 
-def find_source_datasets(start_node_id, dag, dag_node_to_lineage_df):
+def find_source_datasets(start_node_id, dag, dag_node_to_intermediates, dag_node_to_provenance):
     nodes_to_search = []
     nodes_processed = set()
 
     source_datasets = {}
+    source_provenances = {}
 
     nodes_to_search.append(start_node_id)
 
@@ -25,8 +26,9 @@ def find_source_datasets(start_node_id, dag, dag_node_to_lineage_df):
                 if source.node_id not in nodes_processed and source.node_id not in nodes_to_search:
                     nodes_to_search.append(source.node_id)
                     if source.operator_info.operator == OperatorType.DATA_SOURCE:
-                        data = dag_node_to_lineage_df[source]
+                        data = dag_node_to_intermediates[source]
                         source_datasets[source.node_id] = data
+                        source_provenances[source.node_id] = dag_node_to_provenance[source]
         nodes_processed.add(current_node_id)
 
-    return source_datasets
+    return source_datasets, source_provenances

@@ -21,7 +21,7 @@ from mlinspect.inspections._inspection_input import OperatorType
 from freamon.templates.classification import ClassificationPipeline
 from freamon.extraction import feature_matrix_extractor, source_extractor
 from freamon.templates import Output#, SourceType, Source
-
+from freamon.extraction._deserialise_provenance import to_polynomials
 
 def from_py_file(path_to_py_file, cmd_args=[]):
     synthetic_cmd_args = ['eyes']
@@ -61,50 +61,59 @@ def _execute_pipeline(inspector: PipelineInspector):
 
     logging.info(f'---RUNTIME: Instrumented execution took {mlinspect_duration * 1000} ms')
 
-    dag_node_to_lineage_df = {
+    dag_node_to_intermediates = {
         node: node_results[lineage_inspection]
         for node, node_results in result.dag_node_to_inspection_results.items()
     }
 
-    # for k, v in dag_node_to_lineage_df.items():
-    #     print(k.operator_info.operator)
-    #     if v is not None:
-    #         print(v.columns)
+    for node, result in dag_node_to_intermediates.items():
+        print(node.operator_info.operator, type(result))
+        if result is not None:
+            print(result.columns)
+
+    dag_node_to_provenance = {
+        node: to_polynomials(result['mlinspect_lineage'])
+        for node, result in dag_node_to_intermediates.items() if result is not None
+    }
+
+    return _from_dag_and_lineage(result.dag, dag_node_to_intermediates, dag_node_to_provenance, log_results=False)
 
 
-    return _from_dag_and_lineage(result.dag, dag_node_to_lineage_df, log_results=False)
 
-
-
-def _from_dag_and_lineage(dag, dag_node_to_lineage_df, log_results=True):
+def _from_dag_and_lineage(dag, dag_node_to_intermediates, dag_node_to_provenance, log_results=True):
     artifact_extraction_start = time.time()
 
     logging.info(f'Identifying training sources')
     train_source_identification_start = time.time()
-    train_sources, train_source_lineage = source_extractor.extract_train_sources(dag, dag_node_to_lineage_df)
+    train_sources, train_source_lineage = \
+        source_extractor.extract_train_sources(dag, dag_node_to_intermediates, dag_node_to_provenance)
     train_source_identification_duration = time.time() - train_source_identification_start
     logging.info(f'---RUNTIME: Artifact extraction > Train source extraction took {train_source_identification_duration * 1000} ms')
 
     logging.info(f'Identifying test sources')
     test_source_identification_start = time.time()
-    test_sources, test_source_lineage = source_extractor.extract_test_sources(dag, dag_node_to_lineage_df)
+    test_sources, test_source_lineage = \
+        source_extractor.extract_test_sources(dag, dag_node_to_intermediates, dag_node_to_provenance)
     test_source_identification_duration = time.time() - test_source_identification_start
     logging.info(f'---RUNTIME: Artifact extraction > Test source extraction took {test_source_identification_duration * 1000} ms')
 
     feature_matrix_extraction_start = time.time()
-    X_train, lineage_X_train = feature_matrix_extractor.extract_train_feature_matrix(dag_node_to_lineage_df)
-    #logging.info(f'Extracted feature matrix X_train with {X_train.shape[0]} rows and {X_train.shape[1]} columns')
+    X_train, lineage_X_train = \
+        feature_matrix_extractor.extract_train_feature_matrix(dag_node_to_intermediates, dag_node_to_provenance)
     logging.info(f'Extracted feature matrix X_train with {len(X_train)} rows and {len(X_train[0])} columns')
-    X_test, lineage_X_test = feature_matrix_extractor.extract_test_feature_matrix(dag_node_to_lineage_df)
-    #logging.info(f'Extracted feature matrix X_test with {X_test.shape[0]} rows and {X_test.shape[1]} columns')
+    X_test, lineage_X_test = \
+        feature_matrix_extractor.extract_test_feature_matrix(dag_node_to_intermediates, dag_node_to_provenance)
     logging.info(f'Extracted feature matrix X_test with {len(X_test)} rows and {len(X_test[0])} columns')
     feature_matrix_extraction_duration = time.time() - feature_matrix_extraction_start
     logging.info(f'---RUNTIME: Artifact extraction > Feature matrix extraction took {feature_matrix_extraction_duration * 1000} ms')
 
     label_prediction_extraction_start = time.time()
-    y_train, lineage_y_train = feature_matrix_extractor.extract_train_labels(dag_node_to_lineage_df)
-    y_test, lineage_y_test = feature_matrix_extractor.extract_test_labels(dag_node_to_lineage_df)
-    y_pred, lineage_y_pred = feature_matrix_extractor.extract_predicted_labels(dag_node_to_lineage_df)
+    y_train, lineage_y_train = \
+        feature_matrix_extractor.extract_train_labels(dag_node_to_intermediates, dag_node_to_provenance)
+    y_test, lineage_y_test = \
+        feature_matrix_extractor.extract_test_labels(dag_node_to_intermediates, dag_node_to_provenance)
+    y_pred, lineage_y_pred = \
+        feature_matrix_extractor.extract_predicted_labels(dag_node_to_intermediates, dag_node_to_provenance)
     label_prediction_extraction_duration = time.time() - label_prediction_extraction_start
     logging.info(f'---RUNTIME: Artifact extraction > Label and prediction extraction took {label_prediction_extraction_duration * 1000} ms')
 
