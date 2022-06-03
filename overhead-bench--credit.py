@@ -63,20 +63,22 @@ def extract_labels(adult_train, adult_test):
 
 def create_training_pipeline(k):
     featurisation = create_feature_encoding_pipeline()
-    learning = Pipeline([
-        ('features', featurisation),
-        ('learner', SGDClassifier(loss='log'))
-    ])
-
-    params = {
-        'learner__penalty': ['l2', 'l1'],
-        'learner__alpha': [0.0001, 0.001, 0.01, 0.1]
-    }
 
     if k > 1:
-        return GridSearchCV(estimator=learning, param_grid=params, cv=k)
+        params = {
+            'penalty': ['l2', 'l1'],
+            'alpha': [0.0001, 0.001, 0.01, 0.1]
+        }
+
+        return Pipeline([
+            ('features', featurisation),
+            ('learner', GridSearchCV(estimator=SGDClassifier(loss='log'), param_grid=params, cv=k))
+        ])
     else:
-        return learning
+        return Pipeline([
+            ('features', featurisation),
+            ('learner', SGDClassifier(loss='log'))
+        ])
 
 
 def random_subset(arr):
