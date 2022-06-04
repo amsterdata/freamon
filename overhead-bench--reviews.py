@@ -5,7 +5,7 @@ from faker import Faker
 import datetime
 from sklearn.preprocessing import OneHotEncoder, label_binarize, StandardScaler
 from sklearn.compose import ColumnTransformer
-from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import SGDClassifier
 from sklearn.feature_extraction.text import HashingVectorizer
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import GridSearchCV
@@ -87,17 +87,17 @@ def define_model(numerical_columns, categorical_columns, k):
     if k > 1:
         params = {
             'penalty': ['l2', 'l1'],
-            'C': [0.0001, 0.001, 0.01, 1.0]
+            'alpha': [0.0001, 0.001, 0.01, 0.1]
         }
 
         return Pipeline([
             ('features', feature_transformation),
-            ('learner', GridSearchCV(estimator=LogisticRegression(max_iter=1000), param_grid=params, cv=k))
+            ('learner', GridSearchCV(estimator=SGDClassifier(loss='log'), param_grid=params, cv=k))
         ])
     else:
         return Pipeline([
             ('features', feature_transformation),
-            ('learner', LogisticRegression(max_iter=1000))])
+            ('learner', SGDClassifier(loss='log'))])
 
 
 # Make sure this code is not executed during imports
