@@ -130,4 +130,4 @@ def _from_dag_and_lineage(dag, dag_node_to_intermediates, dag_node_to_provenance
     logging.info(f'---RUNTIME: Artifact extraction took {artifact_extraction_duration * 1000} ms')
 
     return ClassificationPipeline(train_sources, train_source_lineage, test_sources, test_source_lineage,
-                                  outputs, output_lineage)
+                                  outputs, output_lineage, dag, dag_node_to_intermediates, dag_node_to_provenance)
