@@ -22,6 +22,9 @@ class DuckDBViewGenerator:
 
         # Register test_sources
         for source_id, source in self.test_sources.items():
+
+            logging.info(f"Registering test source {source_id} with columns: {list(source.columns)}")
+
             self.db.register(f'_freamon_source_{source_id}', source)
             self.db.execute(f"""
               CREATE OR REPLACE VIEW _freamon_source_{source_id}_with_prov_view AS 
@@ -46,9 +49,9 @@ class DuckDBViewGenerator:
         # Create a view with foreign keys over the test data
         provenance_based_fk_columns = ''
 
-        for source_index in range(len(self.test_sources)):
+        for position, source_index in enumerate(self.test_sources.keys()):
             provenance_based_fk_columns += \
-                f"CAST(regexp_replace(polynomial[{source_index + 1}], '\(\\d+,|\)', '', 'g') AS INT) " + \
+                f"CAST(regexp_replace(polynomial[{position + 1}], '\(\\d+,|\)', '', 'g') AS INT) " + \
                 f"AS prov_id_source_{source_index},\n"
 
         # TODO this might have some issues if the same table is joined twice, because we lose the order in list_distinct
@@ -79,7 +82,7 @@ class DuckDBViewGenerator:
 
         if with_features:
             columns_to_select.append('ftv.features')
-            
+
         if with_y_true:
             columns_to_select.append('ftv.y_true')
 
