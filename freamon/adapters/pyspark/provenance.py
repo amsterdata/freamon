@@ -1,6 +1,6 @@
-from freamon.provenance.pyspark.rdd import TracedRDD
-from freamon.provenance.pyspark.store import SingletonProvStore
-from freamon.provenance.pyspark.pipeline import TracedPipeline
+from freamon.adapters.pyspark.rdd import TracedRDD
+from freamon.adapters.pyspark.store import SingletonProvStore
+from freamon.adapters.pyspark.pipeline import TracedPipeline
 
 
 def trace_provenance():

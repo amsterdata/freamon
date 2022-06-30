@@ -3,11 +3,13 @@ import tempfile
 from contextlib import redirect_stdout
 import logging
 import time
+import duckdb
 
 from mlinspect import PipelineInspector
 from mlinspect.inspections._lineage import RowLineage
 from mlinspect.inspections._inspection_input import OperatorType
 
+from freamon.adapters.mlinspect.base_views import generate_base_views
 from freamon.viewgen.duckdb import DuckDBViewGenerator
 
 
@@ -49,5 +51,8 @@ def _execute_pipeline(inspector: PipelineInspector):
         for node, node_results in result.dag_node_to_inspection_results.items()
     }
 
-    return DuckDBViewGenerator(result.dag, dag_node_to_intermediates), runtimes
-    # return result.dag, dag_node_to_intermediates, runtimes
+    db = duckdb.connect(":memory")
+
+    source_id_to_columns = generate_base_views(db, result.dag, dag_node_to_intermediates)
+
+    return DuckDBViewGenerator(db, source_id_to_columns)
