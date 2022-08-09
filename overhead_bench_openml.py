@@ -75,13 +75,7 @@ def get_dataset(seed):
     return train, train_labels, test, test_labels, numerical_columns, categorical_columns
 
 
-# Make sure this code is not executed during imports
-if sys.argv[0] == 'eyes' or __name__ == "__main__":
-
-    k = 1
-    if len(sys.argv) > 1:
-        k = int(sys.argv[1])
-
+def run_pipeline(k):
     seed = 1234
     np.random.seed(seed)
 
@@ -91,8 +85,22 @@ if sys.argv[0] == 'eyes' or __name__ == "__main__":
 
     if not applicable_on_df:
         model = flow.fit(train[numerical_columns].values, train_labels)
-        print('    Score: ', model.score(test[numerical_columns].values, test_labels))
+        score = model.score(test[numerical_columns].values, test_labels)
+
         pass
     else:
         model = flow.fit(train, train_labels)
-        print('    Score: ', model.score(test, test_labels))
+        score = model.score(test, test_labels)
+
+    # print('    Score: ', score)
+
+
+# Make sure this code is not executed during imports
+if sys.argv[0] == 'eyes' or __name__ == "__main__":
+
+    if len(sys.argv) > 1:
+        k = int(sys.argv[1])
+        run_pipeline(k)
+    else:
+        print("Parameter k is missing")
+        sys.exit(-1)

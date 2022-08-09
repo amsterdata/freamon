@@ -4,20 +4,29 @@ from mlinspect.inspections._inspection_input import OperatorType
 
 
 def generate_base_views(db, dag, node_to_intermediates):
+
+    test_source_id_to_columns = _generate_test_views(db, dag, node_to_intermediates)
+    train_source_id_to_columns = _generate_train_views(db, dag, node_to_intermediates)
+
+    return train_source_id_to_columns, test_source_id_to_columns
+
+def _generate_test_views(db, dag, node_to_intermediates):
     test_data_node = _find_first_by_type(dag, OperatorType.TEST_DATA)
     test_sources = _find_source_datasets(dag, node_to_intermediates, test_data_node.node_id)
 
     for source_id, source in test_sources.items():
         logging.info(f"Registering test source {source_id} with columns: {list(source.columns)}")
+        db.register(f'_freamon_test_source_{source_id}', source)
 
-        db.register(f'_freamon_source_{source_id}', source)
-        db.execute(f"""
-                  CREATE OR REPLACE VIEW _freamon_source_{source_id}_with_prov_view AS 
+        view_creation_query = f"""
+                  CREATE OR REPLACE VIEW _freamon_test_source_{source_id}_with_prov_view AS 
                   SELECT 
-                    * EXCLUDE mlinspect_lineage, 
-                    CAST(string_to_array(trim(mlinspect_lineage, ')('), ',')[2] AS INT) AS prov_id_source_{source_id}
-                  FROM _freamon_source_{source_id}
-                """)
+                  {_rename_columns(list(source.columns))}
+                  FROM _freamon_test_source_{source_id}
+                """
+
+        logging.info(view_creation_query)
+        db.execute(view_creation_query)
 
     # Register X_test with y_true and y_pred
     x_test = node_to_intermediates[_find_first_by_type(dag, OperatorType.TEST_DATA)]
@@ -32,29 +41,66 @@ def generate_base_views(db, dag, node_to_intermediates):
     db.register(f'_freamon_x_test', x_test)
 
     # Create a view with foreign keys over the test data
-    provenance_based_fk_columns = ''
-
-    for position, source_index in enumerate(test_sources.keys()):
-        provenance_based_fk_columns += \
-            f"CAST(regexp_replace(polynomial[{position + 1}], '\(\\d+,|\)', '', 'g') AS INT) " + \
-            f"AS prov_id_source_{source_index},\n"
-
-    # TODO this might have some issues if the same table is joined twice, because we lose the order in list_distinct
+    # TODO Current implementation cannot handle cases where the same table is joined twice
     db.execute(f"""
-              CREATE OR REPLACE VIEW _freamon_test_view AS 
-              SELECT 
-                features, y_true, y_pred,
-                {provenance_based_fk_columns}    
-              FROM (
-                SELECT 
-                  features, y_true, y_pred,
-                  list_sort(list_distinct(string_to_array(mlinspect_lineage, ';'))) AS polynomial
-                FROM _freamon_x_test
-              )
-            """)
+    CREATE OR REPLACE VIEW _freamon_test_view AS 
+        SELECT
+        {_rename_columns(list(x_test.columns))}   
+        FROM _freamon_x_test    
+    """)
 
     return {source_id: list(source.columns) for source_id, source in test_sources.items()}
 
+
+def _generate_train_views(db, dag, node_to_intermediates):
+    train_data_node = _find_first_by_type(dag, OperatorType.TRAIN_DATA)
+    train_sources = _find_source_datasets(dag, node_to_intermediates, train_data_node.node_id)
+
+    for source_id, source in train_sources.items():
+        logging.info(f"Registering train source {source_id} with columns: {list(source.columns)}")
+        db.register(f'_freamon_train_source_{source_id}', source)
+
+        view_creation_query = f"""
+                  CREATE OR REPLACE VIEW _freamon_train_source_{source_id}_with_prov_view AS 
+                  SELECT 
+                  {_rename_columns(list(source.columns))}
+                  FROM _freamon_train_source_{source_id}
+                """
+
+        logging.info(view_creation_query)
+        db.execute(view_creation_query)
+
+    # Register X_test with y_true and y_pred
+    x_train = node_to_intermediates[_find_first_by_type(dag, OperatorType.TRAIN_DATA)]
+    y_train = node_to_intermediates[_find_first_by_type(dag, OperatorType.TRAIN_LABELS)]
+
+    # TODO can we do this without copies?
+    x_train.rename(columns={'array': 'features'}, inplace=True)
+    x_train['y_true'] = y_train['array']
+
+    db.register(f'_freamon_x_train', x_train)
+
+    # Create a view with foreign keys over the test data
+    # TODO Current implementation cannot handle cases where the same table is joined twice
+    db.execute(f"""
+    CREATE OR REPLACE VIEW _freamon_train_view AS 
+        SELECT
+        {_rename_columns(list(x_train.columns))}   
+        FROM _freamon_x_train    
+    """)
+
+    return {source_id: list(source.columns) for source_id, source in train_sources.items()}
+
+
+def _rename_columns(columns):
+    view_columns = []
+    for column in columns:
+        if not column.startswith('mlinspect_lineage'):
+            view_columns.append((column, column))
+        else:
+            source_id = column.split('_')[2]
+            view_columns.append((column, f'prov_id_source_{source_id}'))
+    return ', '.join([f'"{orig_name}" AS "{new_name}"' for orig_name, new_name in view_columns])
 
 
 def _find_source_datasets(dag, node_to_intermediates, start_node_id):

@@ -1,32 +1,47 @@
-import command
+import sys
 import time
+import warnings
 
+from freamon.adapters.mlinspect.provenance import from_py_file
+from overhead_bench_dspipes import run_pipeline as run_dspipes
+from overhead_bench_credit import run_pipeline as run_credit
+from overhead_bench_openml import run_pipeline as run_openml
+from overhead_bench_reviews import run_pipeline as run_reviews
 
-print('pipeline,k,non_instrumented,instrumented,mlinspect,provenance_conv,train_source,test_source,feature_matrix,predictions')
+warnings.filterwarnings("ignore")
+
+if not len(sys.argv) > 1:
+    print("Specify pipeline file!")
+    sys.exit(-1)
+
+# 'overhead_bench_dspipes.py', 'overhead_bench_openml.py', 'overhead_bench_reviews.py', 'overhead_bench_credit.py'
+pipeline_file = sys.argv[1]
+
+pipeline_runners = {
+    'overhead_bench_dspipes.py': run_dspipes,
+    'overhead_bench_credit.py': run_credit,
+    'overhead_bench_openml.py': run_openml,
+    'overhead_bench_reviews.py': run_reviews,
+}
+
+print('pipeline,k,non_instrumented,instrumented')
 
 num_repetitions = 7
-for _ in range(num_repetitions):
-    for pipeline in ['overhead-bench--dspipes.py', 'overhead-bench--openml.py',
-                     'overhead-bench--reviews.py', 'overhead-bench--credit.py']:
-        for k in [1, 5, 10, 20, 35, 50]:
 
-            start = time.time()
-            res = command.run(["python", pipeline, str(k)])
-            noninstrumented_time = (time.time() - start) * 1000
+# Warm-up run to ignore effect of imports
+_view_gen = from_py_file(pipeline_file, cmd_args='1')
 
-            start = time.time()
-            res = command.run(["python", "overhead-bench--instrumented.py", pipeline, str(k)])
-            instrumented_time = (time.time() - start) * 1000
+for k in [1, 5, 10, 20, 35, 50]:
 
-            times = eval(res.output)
+    for _ in range(num_repetitions):
 
-            line = f'{pipeline},{k},{int(noninstrumented_time)},{int(instrumented_time)},' + \
-                f'{int(times["instrumentation"])},' + \
-                f'{int(times["provenance_conversion"])},{int(times["train_source_extraction"])},' + \
-                f'{int(times["test_source_extraction"])},{int(times["feature_matrix_extraction"])},' + \
-                f'{int(times["label_and_prediction_extraction"])}'
+        start = time.time()
+        pipeline_runners[pipeline_file](k)
+        noninstrumented_time = (time.time() - start) * 1000
 
-            print(line)
+        start = time.time()
+        _view_gen = from_py_file(pipeline_file, cmd_args=[str(k)])
+        instrumented_time = (time.time() - start) * 1000
 
-            #print(f'k={k},noinst={noninstrumented_time},inst={instrumented_time}')
-
+        line = f'{pipeline_file},{k},{int(noninstrumented_time)},{int(instrumented_time)}'
+        print(line)

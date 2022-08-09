@@ -9,6 +9,7 @@ from sklearn.preprocessing import StandardScaler, FunctionTransformer, OneHotEnc
 from sklearn.compose import ColumnTransformer
 from sklearn.model_selection import GridSearchCV
 
+
 def load_train_and_test_data(adult_train_location, adult_test_location):
 
     columns = ['age', 'workclass', 'fnlwgt', 'education', 'education-num', 'marital-status', 'occupation',
@@ -87,19 +88,9 @@ def random_subset(arr):
     return [str(item) for item in choice]
 
 
-# Make sure this code is not executed during imports
-if sys.argv[0] == 'eyes' or __name__ == "__main__":
-    seed = 1234
+def run_pipeline(k):
 
-    k=1
-
-    if len(sys.argv) > 1:
-        k = int(sys.argv[1])
-
-    if len(sys.argv) > 2:
-        seed = int(sys.argv[2])
-
-    np.random.seed(seed)
+    np.random.seed(42)
 
     train_location = 'datasets/income/adult.data'
     test_location = 'datasets/income/adult.test'
@@ -121,4 +112,15 @@ if sys.argv[0] == 'eyes' or __name__ == "__main__":
 
     score = model.score(test, test_labels)
 
-    print("Model accuracy on held-out data", score)
+    #print("Model accuracy on held-out data", score)
+
+
+# Make sure this code is not executed during imports
+if sys.argv[0] == 'eyes' or __name__ == "__main__":
+
+    if len(sys.argv) > 1:
+        k = int(sys.argv[1])
+        run_pipeline(k)
+    else:
+        print("Parameter k is missing")
+        sys.exit(-1)

@@ -24,7 +24,6 @@ def get_clf(k):
             "splitter": ["best", "random"],
             "min_samples_leaf": [1, 5]
         }
-
         return GridSearchCV(estimator=DecisionTreeClassifier(), param_grid=params, cv=k)
     else:
         return DecisionTreeClassifier()
@@ -59,7 +58,6 @@ def create_tabular_pipeline(k, categorical_ix=[0], numerical_ix=[1, 2, 3], imput
 
 
 def get_dataset():
-    #elif name == 'cardio':
 
     numerical_columns = ['age', 'height', 'weight', 'ap_hi', 'ap_lo']
     categorical_columns = ['gender', 'cholesterol', 'gluc', 'smoke', 'alco', 'active']
@@ -77,12 +75,7 @@ def get_dataset():
     return train, train_labels, test, test_labels, numerical_columns, categorical_columns
 
 
-# Make sure this code is not executed during imports
-if sys.argv[0] == 'eyes' or __name__ == "__main__":
-
-    k = 1
-    if len(sys.argv) > 1:
-        k = int(sys.argv[1])
+def run_pipeline(k):
 
     train, train_labels, test, test_labels, numerical_columns, categorical_columns = get_dataset()
 
@@ -90,4 +83,15 @@ if sys.argv[0] == 'eyes' or __name__ == "__main__":
 
     model = pipeline.fit(train, train_labels)
 
-    print(model.score(test, test_labels))
+    score = model.score(test, test_labels)
+
+
+# Make sure this code is not executed during imports
+if sys.argv[0] == 'eyes' or __name__ == "__main__":
+
+    if len(sys.argv) > 1:
+        k = int(sys.argv[1])
+        run_pipeline(k)
+    else:
+        print("Parameter k is missing")
+        sys.exit(-1)

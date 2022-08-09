@@ -1,8 +1,5 @@
 import os
-import tempfile
-from contextlib import redirect_stdout
 import logging
-import time
 import duckdb
 
 from mlinspect import PipelineInspector
@@ -30,29 +27,18 @@ def _execute_pipeline(inspector: PipelineInspector):
 
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-    runtimes = {}
-
-    logging.info('Executing instrumented user pipeline with mlinspect')
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        logging.info('Redirecting the pipeline\'s stdout to pipeline-output.txt')
-        with open(os.path.join(tmpdirname, 'pipeline-output.txt'), 'w') as tmpfile:
-            with redirect_stdout(tmpfile):
-                mlinspect_start = time.time()
-                result = inspector \
-                    .add_required_inspection(lineage_inspection) \
-                    .execute()
-                mlinspect_duration = time.time() - mlinspect_start
-
-    logging.info(f'---RUNTIME: Instrumented execution took {mlinspect_duration * 1000} ms')
-    runtimes['instrumentation'] = mlinspect_duration * 1000
+    result = inspector \
+        .add_required_inspection(lineage_inspection) \
+        .execute()
 
     dag_node_to_intermediates = {
         node: node_results[lineage_inspection]
         for node, node_results in result.dag_node_to_inspection_results.items()
     }
 
-    db = duckdb.connect(":memory")
+    db = duckdb.connect(database=':memory:')
 
-    source_id_to_columns = generate_base_views(db, result.dag, dag_node_to_intermediates)
+    train_source_id_to_columns, test_source_id_to_columns = \
+        generate_base_views(db, result.dag, dag_node_to_intermediates)
 
-    return DuckDBViewGenerator(db, source_id_to_columns)
+    return DuckDBViewGenerator(db, train_source_id_to_columns, test_source_id_to_columns)
