@@ -1,4 +1,4 @@
-mlinspect[dev] @ git+https://github.com/stefan-grafberger/mlinspect.git@14c8f13af61e02e8dca623d374d919cb9d890e43
+mlinspect[dev] @ git+https://github.com/stefan-grafberger/mlinspect.git@91fd16ba583bf0042953a4760c69474a540fe857
 matplotlib==3.4.2
 mlflow==1.18
 numba==0.53

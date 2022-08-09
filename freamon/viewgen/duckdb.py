@@ -7,6 +7,9 @@ class DuckDBViewGenerator:
         self.db = db
         self.source_id_to_columns = source_id_to_columns
 
+    def query(self, query):
+        return self.db.execute(query).df()
+
 
     def test_view(self, sliceable_by, with_features, with_y_true, with_y_pred):
 
