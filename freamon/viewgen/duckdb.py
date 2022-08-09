@@ -3,9 +3,10 @@ import logging
 
 class DuckDBViewGenerator:
 
-    def __init__(self, db, source_id_to_columns):
+    def __init__(self, db, train_source_id_to_columns, test_source_id_to_columns):
         self.db = db
-        self.source_id_to_columns = source_id_to_columns
+        self.train_source_id_to_columns = train_source_id_to_columns
+        self.test_source_id_to_columns = test_source_id_to_columns
 
     def query(self, query):
         return self.db.execute(query).df()
@@ -17,7 +18,7 @@ class DuckDBViewGenerator:
         sources_to_join = set()
 
         for slice_column in sliceable_by:
-            for source_id, columns in self.source_id_to_columns.items():
+            for source_id, columns in self.test_source_id_to_columns.items():
                 if slice_column in columns:
                     columns_to_select.append(f"fs{source_id}.{slice_column}")
                     sources_to_join.add(source_id)
@@ -35,7 +36,7 @@ class DuckDBViewGenerator:
         source_joins = ''
         for source_index in sources_to_join:
             source_joins += \
-                f"JOIN _freamon_source_{source_index}_with_prov_view fs{source_index} " + \
+                f"JOIN _freamon_test_source_{source_index}_with_prov_view fs{source_index} " + \
                 f" ON fs{source_index}.prov_id_source_{source_index} = ftv.prov_id_source_{source_index}\n"
 
         query = f"""
