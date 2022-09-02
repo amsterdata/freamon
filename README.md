@@ -10,4 +10,4 @@ We provide an [example notebook](view-reviews.ipynb) that shows how to capture a
 
 This project is work in progress, and we already have a preliminary implementation for [pyspark pipelines](preliminary-views-for-pyspark.ipynb) as well. 
 
-We provide example pipelines and datasets from the [OpenML](https://www.openml.org) project, the [dspipes](https://github.com/DS3Lab/datascope-pipelines) project of the [DS3Lab](https://github.com/DS3Lab) and from the [arguseyes](https://github.com/schelterlabs/arguseyes)/[mlinspect](https://github.com/stefan-grafberger/mlinspect) projects.
+We include example pipelines and datasets from the [OpenML](https://www.openml.org) project, the [dspipes](https://github.com/DS3Lab/datascope-pipelines) project of the [DS3Lab](https://github.com/DS3Lab) and from the [arguseyes](https://github.com/schelterlabs/arguseyes)/[mlinspect](https://github.com/stefan-grafberger/mlinspect) projects.
