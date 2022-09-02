@@ -5,28 +5,46 @@ from mlinspect.inspections._inspection_input import OperatorType
 
 def generate_base_views(db, dag, node_to_intermediates):
 
-    test_source_id_to_columns = _generate_test_views(db, dag, node_to_intermediates)
-    train_source_id_to_columns = _generate_train_views(db, dag, node_to_intermediates)
+    train_data_node = _find_first_by_type(dag, OperatorType.TRAIN_DATA)
+    train_sources = _find_source_datasets(dag, node_to_intermediates, train_data_node.node_id)
 
-    return train_source_id_to_columns, test_source_id_to_columns
-
-def _generate_test_views(db, dag, node_to_intermediates):
     test_data_node = _find_first_by_type(dag, OperatorType.TEST_DATA)
     test_sources = _find_source_datasets(dag, node_to_intermediates, test_data_node.node_id)
 
-    for source_id, source in test_sources.items():
-        logging.info(f"Registering test source {source_id} with columns: {list(source.columns)}")
-        db.register(f'_freamon_test_source_{source_id}', source)
+    sources = train_sources | test_sources
+
+    for source_id, source in sources.items():
+        logging.info(f"Registering source {source_id} with columns: {list(source.columns)}")
+        db.register(f'_freamon_source_{source_id}', source)
 
         view_creation_query = f"""
-                  CREATE OR REPLACE VIEW _freamon_test_source_{source_id}_with_prov_view AS 
+                  CREATE OR REPLACE VIEW _freamon_source_{source_id}_with_prov_view AS 
                   SELECT 
                   {_rename_columns(list(source.columns))}
-                  FROM _freamon_test_source_{source_id}
+                  FROM _freamon_source_{source_id}
                 """
 
         logging.info(view_creation_query)
         db.execute(view_creation_query)
+
+    # Register X_train with y_true
+    x_train = node_to_intermediates[_find_first_by_type(dag, OperatorType.TRAIN_DATA)]
+    y_train = node_to_intermediates[_find_first_by_type(dag, OperatorType.TRAIN_LABELS)]
+
+    # TODO can we do this without copies?
+    x_train.rename(columns={'array': 'features'}, inplace=True)
+    x_train['y_true'] = y_train['array']
+
+    db.register(f'_freamon_x_train', x_train)
+
+    # Create a view with foreign keys over the test data
+    # TODO Current implementation cannot handle cases where the same table is joined twice
+    db.execute(f"""
+    CREATE OR REPLACE VIEW _freamon_train_view AS 
+        SELECT
+        {_rename_columns(list(x_train.columns))}   
+        FROM _freamon_x_train    
+    """)
 
     # Register X_test with y_true and y_pred
     x_test = node_to_intermediates[_find_first_by_type(dag, OperatorType.TEST_DATA)]
@@ -49,47 +67,7 @@ def _generate_test_views(db, dag, node_to_intermediates):
         FROM _freamon_x_test    
     """)
 
-    return {source_id: list(source.columns) for source_id, source in test_sources.items()}
-
-
-def _generate_train_views(db, dag, node_to_intermediates):
-    train_data_node = _find_first_by_type(dag, OperatorType.TRAIN_DATA)
-    train_sources = _find_source_datasets(dag, node_to_intermediates, train_data_node.node_id)
-
-    for source_id, source in train_sources.items():
-        logging.info(f"Registering train source {source_id} with columns: {list(source.columns)}")
-        db.register(f'_freamon_train_source_{source_id}', source)
-
-        view_creation_query = f"""
-                  CREATE OR REPLACE VIEW _freamon_train_source_{source_id}_with_prov_view AS 
-                  SELECT 
-                  {_rename_columns(list(source.columns))}
-                  FROM _freamon_train_source_{source_id}
-                """
-
-        logging.info(view_creation_query)
-        db.execute(view_creation_query)
-
-    # Register X_test with y_true and y_pred
-    x_train = node_to_intermediates[_find_first_by_type(dag, OperatorType.TRAIN_DATA)]
-    y_train = node_to_intermediates[_find_first_by_type(dag, OperatorType.TRAIN_LABELS)]
-
-    # TODO can we do this without copies?
-    x_train.rename(columns={'array': 'features'}, inplace=True)
-    x_train['y_true'] = y_train['array']
-
-    db.register(f'_freamon_x_train', x_train)
-
-    # Create a view with foreign keys over the test data
-    # TODO Current implementation cannot handle cases where the same table is joined twice
-    db.execute(f"""
-    CREATE OR REPLACE VIEW _freamon_train_view AS 
-        SELECT
-        {_rename_columns(list(x_train.columns))}   
-        FROM _freamon_x_train    
-    """)
-
-    return {source_id: list(source.columns) for source_id, source in train_sources.items()}
+    return {source_id: list(source.columns) for source_id, source in sources.items()}
 
 
 def _rename_columns(columns):

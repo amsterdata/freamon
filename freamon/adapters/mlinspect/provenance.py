@@ -38,7 +38,6 @@ def _execute_pipeline(inspector: PipelineInspector):
 
     db = duckdb.connect(database=':memory:')
 
-    train_source_id_to_columns, test_source_id_to_columns = \
-        generate_base_views(db, result.dag, dag_node_to_intermediates)
+    source_id_to_columns = generate_base_views(db, result.dag, dag_node_to_intermediates)
 
-    return DuckDBViewGenerator(db, train_source_id_to_columns, test_source_id_to_columns)
+    return DuckDBViewGenerator(db, source_id_to_columns)

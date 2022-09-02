@@ -1,6 +1,12 @@
 from freamon.adapters.pyspark.rdd import TracedRDD
 from freamon.adapters.pyspark.store import SingletonProvStore
 from freamon.adapters.pyspark.pipeline import TracedPipeline
+from freamon.adapters.pyspark.base_views import generate_base_views
+from freamon.viewgen.spark import SparkViewGenerator
+
+
+def from_trace(_tr, spark):
+    return SparkViewGenerator(spark, generate_base_views(SingletonProvStore()))
 
 
 def trace_provenance():
@@ -10,7 +16,7 @@ def trace_provenance():
 class ProvenanceTracing:
 
     def __init__(self):
-        self.source_counter = 0
+        self.source_counter = 1
 
     def __enter__(self):
         return self
@@ -20,6 +26,9 @@ class ProvenanceTracing:
         pass
 
     def read_csv(self, spark, path):
+
+        source_id = self.source_counter
+
         df = spark.read \
             .option("header", "true") \
             .csv(path) \
@@ -27,9 +36,9 @@ class ProvenanceTracing:
 
         rdd_with_provenance = df.rdd \
             .zipWithUniqueId() \
-            .map(lambda row_and_id: (row_and_id[0], {(self.source_counter, row_and_id[1])}))
+            .map(lambda row_and_id: (row_and_id[0], {(source_id, row_and_id[1])}))
 
-        SingletonProvStore().sources[self.source_counter] = rdd_with_provenance
+        SingletonProvStore().sources[source_id] = rdd_with_provenance
 
         self.source_counter += 1
 

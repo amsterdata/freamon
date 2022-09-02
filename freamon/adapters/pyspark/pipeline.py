@@ -17,7 +17,7 @@ class TracedPipeline:
         fitted_encoding_pipeline = self.encoding_pipeline.fit(data)
 
         transformed_data = fitted_encoding_pipeline.transform(data)
-        SingletonProvStore().train_features = transformed_data.select(['features'])
+        SingletonProvStore().train_features = transformed_data.select(['features', 'label'])
 
         fitted_estimator = self.estimator.fit(transformed_data)
 
