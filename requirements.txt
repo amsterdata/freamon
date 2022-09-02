@@ -2,10 +2,9 @@ mlinspect[dev] @ git+https://github.com/stefan-grafberger/mlinspect.git@91fd16ba
 matplotlib==3.4.2
 mlflow==1.18
 numba==0.53
-# This is problematic on MacOS
-# icc-rt==2020.0.133
 pyyaml==5.4.1
-#pyarrow==4.0.1
 faker
 command
 pyspark
+fairlearn
+
