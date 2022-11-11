@@ -53,7 +53,7 @@ class TracedRDD:
             row_dict = left_row.asDict()
             row_dict.update(right_row.asDict())
 
-            return (Row(**row_dict), polynomial)
+            return Row(**row_dict), polynomial
 
         keyed_rdd_left = self.rdd \
             .map(lambda row_and_id: (row_and_id[0][left_on], row_and_id))

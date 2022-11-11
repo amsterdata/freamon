@@ -1,12 +1,15 @@
+import duckdb
+
 from freamon.adapters.pyspark.rdd import TracedRDD
 from freamon.adapters.pyspark.store import SingletonProvStore
 from freamon.adapters.pyspark.pipeline import TracedPipeline
 from freamon.adapters.pyspark.base_views import generate_base_views
-from freamon.viewgen.spark import SparkViewGenerator
+from freamon.viewgen.duckdb import DuckDBViewGenerator
 
 
-def from_trace(_tr, spark):
-    return SparkViewGenerator(spark, generate_base_views(SingletonProvStore()))
+def from_trace():
+    db = duckdb.connect(database=':memory:')
+    return DuckDBViewGenerator(db, generate_base_views(SingletonProvStore(), db))
 
 
 def trace_provenance():
@@ -16,7 +19,7 @@ def trace_provenance():
 class ProvenanceTracing:
 
     def __init__(self):
-        self.source_counter = 1
+        self.source_counter = 0
 
     def __enter__(self):
         return self
