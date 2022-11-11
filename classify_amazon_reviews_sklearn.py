@@ -84,7 +84,7 @@ seed = 1234
 np.random.seed(seed)
 
 numerical_columns = ['total_votes', 'star_rating']
-categorical_columns = ['customer_id', 'product_id', 'vine', 'category']
+categorical_columns = ['category']
 final_columns = numerical_columns + categorical_columns + ['text', 'is_helpful', 'review_date']
 
 start_date = datetime.strptime('2014-01-01', '%Y-%m-%d').date()

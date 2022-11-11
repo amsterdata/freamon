@@ -71,6 +71,8 @@ class TracedRDD:
         rdd1, rdd2 = self.rdd.randomSplit([train_ratio, 1.0 - train_ratio], seed)
         return TracedRDD(rdd1), TracedRDD(rdd2)
 
+    def persist(self, storage_level):
+        self.rdd.persist(storage_level)
 
     def cache(self):
         self.rdd.cache()

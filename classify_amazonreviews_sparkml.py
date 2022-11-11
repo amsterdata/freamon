@@ -47,9 +47,6 @@ def compute_feature_and_label_data(integrated_data, split_date):
     train = integrated_data.filter(lambda row: row['review_date'] is not None and row['review_date'] <= split_date)
     test = integrated_data.filter(lambda row: row['review_date'] is not None and row['review_date'] > split_date)
 
-    train.cache()
-    test.cache()
-
     return train, test
 
 
@@ -90,7 +87,7 @@ def encode_features(categorical_columns, numerical_columns):
 
 def run_pipeline(spark, start_date, split_date):
     with trace_provenance() as tr:
-        categorical_columns = ['customer_id', 'product_id', 'category']
+        categorical_columns = ['category']
         numerical_columns = ['total_votes', 'star_rating']
 
         reviews, ratings, products, categories = load_data(tr, spark)
@@ -107,7 +104,6 @@ def run_pipeline(spark, start_date, split_date):
 
         model = pipeline.fit(train)
         predictions = model.transform(test)
-        predictions.cache()
 
         predictionsAndLabels = predictions.select(['prediction', 'label']).rdd \
             .map(lambda row: (row['prediction'], float(row['label'])))

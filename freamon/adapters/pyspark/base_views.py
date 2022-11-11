@@ -29,6 +29,17 @@ def generate_base_views(prov_store, db):
         db.register(f'_freamon_source_{source_id}_with_prov_view', source_with_provenance)
         source_id_to_column[source_id] = source_with_provenance.columns
 
+    logging.info(f"Computing train features and predictions...")
+    train_features = prov_store.train_features
+    train_provenance = prov_store.train_provenance
+
+    train_data_with_provenance_rdd = train_features.rdd.zip(train_provenance).map(add_provenance_columns)
+    train_data_with_provenance = train_data_with_provenance_rdd.toDF().toPandas()
+    train_data_with_provenance['features'] = train_data_with_provenance['features'].transform(lambda v: v.toArray())
+
+    db.register(f'_freamon_train_view', train_data_with_provenance)
+
+
     logging.info(f"Computing test features and predictions...")
     test_features_and_predictions = prov_store.test_features_and_predictions
     test_provenance = prov_store.test_provenance
@@ -44,14 +55,5 @@ def generate_base_views(prov_store, db):
 
     db.register(f'_freamon_test_view', test_data_with_provenance)
 
-    logging.info(f"Computing train features and predictions...")
-    train_features = prov_store.train_features
-    train_provenance = prov_store.train_provenance
-
-    train_data_with_provenance_rdd = train_features.rdd.zip(train_provenance).map(add_provenance_columns)
-    train_data_with_provenance = train_data_with_provenance_rdd.toDF().toPandas()
-    train_data_with_provenance['features'] = train_data_with_provenance['features'].transform(lambda v: v.toArray())
-
-    db.register(f'_freamon_train_view', train_data_with_provenance)
 
     return source_id_to_column

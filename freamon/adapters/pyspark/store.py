@@ -15,6 +15,7 @@ class SingletonProvStore:
     def __init__(self):
         self.sources = {}
         self.train_features = None
-        self.test_features_and_predictions = None
         self.train_provenance = None
+        self.test_features_and_predictions = None
         self.test_provenance = None
+
