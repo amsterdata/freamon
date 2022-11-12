@@ -3,7 +3,7 @@ import logging
 from mlinspect.inspections._inspection_input import OperatorType
 
 
-def generate_base_views(db, dag, node_to_intermediates):
+def generate_base_tables(db, dag, node_to_intermediates):
 
     train_data_node = _find_first_by_type(dag, OperatorType.TRAIN_DATA)
     train_sources = _find_source_datasets(dag, node_to_intermediates, train_data_node.node_id)
@@ -18,7 +18,7 @@ def generate_base_views(db, dag, node_to_intermediates):
         db.register(f'_freamon_source_{source_id}', source)
 
         view_creation_query = f"""
-                  CREATE OR REPLACE VIEW _freamon_source_{source_id}_with_prov_view AS 
+                  CREATE OR REPLACE VIEW _freamon_source_{source_id}_with_prov AS 
                   SELECT 
                   {_rename_columns(list(source.columns))}
                   FROM _freamon_source_{source_id}
@@ -40,7 +40,7 @@ def generate_base_views(db, dag, node_to_intermediates):
     # Create a view with foreign keys over the test data
     # TODO Current implementation cannot handle cases where the same table is joined twice
     db.execute(f"""
-    CREATE OR REPLACE VIEW _freamon_train_view AS 
+    CREATE OR REPLACE VIEW _freamon_train AS 
         SELECT
         {_rename_columns(list(x_train.columns))}   
         FROM _freamon_x_train    
@@ -61,7 +61,7 @@ def generate_base_views(db, dag, node_to_intermediates):
     # Create a view with foreign keys over the test data
     # TODO Current implementation cannot handle cases where the same table is joined twice
     db.execute(f"""
-    CREATE OR REPLACE VIEW _freamon_test_view AS 
+    CREATE OR REPLACE VIEW _freamon_test AS 
         SELECT
         {_rename_columns(list(x_test.columns))}   
         FROM _freamon_x_test    

@@ -48,10 +48,7 @@ def compute_feature_and_label_data(reviews_with_products_and_ratings, final_colu
     reviews_with_products_and_ratings['is_helpful'] = reviews_with_products_and_ratings['helpful_votes'] > 0
 
     projected_reviews = reviews_with_products_and_ratings[final_columns]
-
-    print(len(projected_reviews))
     train_data = projected_reviews[projected_reviews.review_date <= split_date.strftime('%Y-%m-%d')]
-    print(len(train_data))
 
     train_labels = label_binarize(train_data['is_helpful'], classes=[True, False]).ravel()
 

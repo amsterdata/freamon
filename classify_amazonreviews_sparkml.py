@@ -51,37 +51,45 @@ def compute_feature_and_label_data(integrated_data, split_date):
 
 
 def encode_features(categorical_columns, numerical_columns):
-    categorical_features = [f'{categorical_column}Vec' for categorical_column in categorical_columns]
 
     stages = []
 
+    # One-hot encode categorical features
     for categorical_column in categorical_columns:
-        stages.append(StringIndexer(inputCol=categorical_column,
-                                    outputCol=f"{categorical_column}Index",
+        stages.append(StringIndexer(inputCol=categorical_column, outputCol=f"{categorical_column}Index",
                                     handleInvalid='keep'))
 
-    encoder = OneHotEncoder(inputCols=[f'{categorical_column}Index' for categorical_column in categorical_columns],
-                            outputCols=categorical_features)
+    categorical_indexes = [f'{categorical_column}Index' for categorical_column in categorical_columns]
+    categorical_features = [f'{categorical_column}Vec' for categorical_column in categorical_columns]
+    encoder = OneHotEncoder(inputCols=categorical_indexes, outputCols=categorical_features)
+    numerical_assembler = VectorAssembler(inputCols=numerical_columns, outputCol="numerical_features_raw")
 
     stages.append(encoder)
-
-    numerical_assembler = VectorAssembler(
-        inputCols=numerical_columns,
-        outputCol="numerical_features_raw")
-
     stages.append(numerical_assembler)
-    stages.append(StandardScaler(inputCol='numerical_features_raw',
-                                 outputCol='numerical_features', withStd=True, withMean=True))
 
-    stages.append(Tokenizer(inputCol="text", outputCol="words"))
-    stages.append(HashingTF(inputCol="words", numFeatures=100, outputCol="text_features"))
+    # Normalize numerical features
+    scaler = StandardScaler(inputCol='numerical_features_raw', outputCol='numerical_features', withMean=True)
+    stages.append(scaler)
 
-    assembler = VectorAssembler(
-        inputCols=categorical_features + ['numerical_features', 'text_features'],
+    # Hash word features
+    tokenizer = Tokenizer(inputCol="text", outputCol="words")
+    hashing = HashingTF(inputCol="words", numFeatures=100, outputCol="text_features")
+
+    stages.append(tokenizer)
+    stages.append(hashing)
+
+    # Concatenate all features
+    assembler = VectorAssembler(inputCols=categorical_features + ['numerical_features', 'text_features'],
         outputCol="features")
 
     stages.append(assembler)
 
+    return stages
+
+
+def add_learner(stages):
+    # Train a logistic regression model
+    stages.append(LogisticRegression(maxIter=10, regParam=0.001))
     return stages
 
 
@@ -90,19 +98,17 @@ def run_pipeline(spark, start_date, split_date):
         categorical_columns = ['category']
         numerical_columns = ['total_votes', 'star_rating']
 
+        # Relational preprocessing
         reviews, ratings, products, categories = load_data(tr, spark)
         integrated_data = integrate_data(reviews, ratings, products, categories, start_date)
+        train, test = compute_feature_and_label_data(integrated_data, split_date)
 
-        train, test = \
-            compute_feature_and_label_data(integrated_data, split_date)
-
+        # Feature encoding & learning
         stages = encode_features(categorical_columns, numerical_columns)
+        stages = add_learner(stages)
 
-        stages.append(LogisticRegression(maxIter=10, regParam=0.001))
-
-        pipeline = tr.make_pipeline(stages=stages)
-
-        model = pipeline.fit(train)
+        # Training and evaluation
+        model = tr.make_pipeline(stages=stages).fit(train)
         predictions = model.transform(test)
 
         predictionsAndLabels = predictions.select(['prediction', 'label']).rdd \

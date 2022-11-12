@@ -6,11 +6,11 @@ from mlinspect import PipelineInspector
 from mlinspect.inspections._lineage import RowLineage
 from mlinspect.inspections._inspection_input import OperatorType
 
-from freamon.adapters.mlinspect.base_views import generate_base_views
+from freamon.adapters.mlinspect.base_views import generate_base_tables
 from freamon.viewgen.duckdb import DuckDBViewGenerator
 
 
-def from_py_file(path_to_py_file, cmd_args=[]):
+def from_sklearn_pandas(path_to_py_file, cmd_args=[]):
     synthetic_cmd_args = ['eyes']
     synthetic_cmd_args.extend(cmd_args)
     from unittest.mock import patch
@@ -38,6 +38,6 @@ def _execute_pipeline(inspector: PipelineInspector):
 
     db = duckdb.connect(database=':memory:')
 
-    source_id_to_columns = generate_base_views(db, result.dag, dag_node_to_intermediates)
+    source_id_to_columns = generate_base_tables(db, result.dag, dag_node_to_intermediates)
 
     return DuckDBViewGenerator(db, source_id_to_columns)
