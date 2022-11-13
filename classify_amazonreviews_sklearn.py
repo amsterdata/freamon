@@ -8,15 +8,17 @@ from sklearn.feature_extraction.text import HashingVectorizer
 from sklearn.pipeline import Pipeline
 
 
+# Data access
 def load_data():
-    reviews = pd.read_csv('datasets/reviews/reviews.csv.gz', compression='gzip', index_col=0)
-    ratings = pd.read_csv('datasets/reviews/ratings.csv', index_col=0)
-    products = pd.read_csv('datasets/reviews/products.csv', index_col=0)
-    categories = pd.read_csv('datasets/reviews/categories.csv', index_col=0)
+    reviews = pd.read_csv('datasets/reviews/reviews.csv.gz', compression='gzip')
+    ratings = pd.read_csv('datasets/reviews/ratings.csv')
+    products = pd.read_csv('datasets/reviews/products.csv')
+    categories = pd.read_csv('datasets/reviews/categories.csv')
 
     return reviews, ratings, products, categories
 
 
+# Relational preprocessing
 def integrate_data(reviews, ratings, products, categories, start_date):
 
     reviews = reviews[reviews.review_date >= start_date.strftime('%Y-%m-%d')]
@@ -28,6 +30,7 @@ def integrate_data(reviews, ratings, products, categories, start_date):
     return reviews_with_products_and_ratings
 
 
+# Relational preprocessing, train/test split
 def compute_feature_and_label_data(reviews_with_products_and_ratings, final_columns, split_date):
     reviews_with_products_and_ratings['product_title'] = \
         reviews_with_products_and_ratings['product_title'].fillna(value='')
@@ -52,15 +55,13 @@ def compute_feature_and_label_data(reviews_with_products_and_ratings, final_colu
 
     train_labels = label_binarize(train_data['is_helpful'], classes=[True, False]).ravel()
 
-
     test_data = projected_reviews[projected_reviews.review_date > split_date.strftime('%Y-%m-%d')]
     test_labels = label_binarize(test_data['is_helpful'], classes=[True, False]).ravel()
-
-
 
     return train_data, train_labels, test_data, test_labels
 
 
+# Feature encoding and learner definition
 def define_model(numerical_columns, categorical_columns):
     feature_transformation = ColumnTransformer(transformers=[
         ('numerical_features', StandardScaler(), numerical_columns),
@@ -77,7 +78,6 @@ def define_model(numerical_columns, categorical_columns):
 
 
 seed = 1234
-
 np.random.seed(seed)
 
 numerical_columns = ['total_votes', 'star_rating']
@@ -94,7 +94,6 @@ train_data, train_labels, test_data, test_labels = \
     compute_feature_and_label_data(integrated_data, final_columns, split_date)
 
 sklearn_model = define_model(numerical_columns, categorical_columns)
-
 model = sklearn_model.fit(train_data, train_labels)
 
 print('Test accuracy', model.score(test_data, test_labels))

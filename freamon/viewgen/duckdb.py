@@ -27,10 +27,10 @@ class DuckDBViewGenerator(ViewGenerator):
 
             query = \
                 f'''
-            CREATE OR REPLACE VIEW _freamon_virtual_{train_or_test}_view AS 
-              SELECT * EXCLUDE ({", ".join(columns_to_exclude)})
-              FROM _freamon_{train_or_test} t
-              {joins}
+CREATE OR REPLACE VIEW _freamon_virtual_{train_or_test}_view AS 
+  SELECT * EXCLUDE ({", ".join(columns_to_exclude)})
+  FROM _freamon_{train_or_test} t
+  {joins}
             '''
 
             logging.info(f'Generating virtual {train_or_test} view via \n\n{query}')

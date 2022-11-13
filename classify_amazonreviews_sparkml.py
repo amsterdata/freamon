@@ -4,6 +4,7 @@ from pyspark.mllib.evaluation import MulticlassMetrics
 from freamon.adapters.pyspark.provenance import trace_provenance
 
 
+# Data access
 def load_data(tr, spark):
     reviews = tr.read_csv(spark, "datasets/reviews/reviews.csv.gz")
     products = tr.read_csv(spark, "datasets/reviews/products.csv")
@@ -13,6 +14,7 @@ def load_data(tr, spark):
     return reviews, ratings, products, categories
 
 
+# Relational preprocessing
 def integrate_data(reviews, ratings, products, categories, start_date):
     reviews = reviews.filter(lambda row: row['review_date'] is not None and row['review_date'] > start_date)
 
@@ -25,6 +27,7 @@ def integrate_data(reviews, ratings, products, categories, start_date):
     return reviews_with_products_and_ratings
 
 
+# Relational preprocessing, train/test split
 def compute_feature_and_label_data(integrated_data, split_date):
     def as_str(row, key):
         if key not in row:
@@ -50,6 +53,7 @@ def compute_feature_and_label_data(integrated_data, split_date):
     return train, test
 
 
+# Feature encoding
 def encode_features(categorical_columns, numerical_columns):
 
     stages = []
@@ -87,6 +91,7 @@ def encode_features(categorical_columns, numerical_columns):
     return stages
 
 
+# Learner definition
 def add_learner(stages):
     # Train a logistic regression model
     stages.append(LogisticRegression(maxIter=10, regParam=0.001))
