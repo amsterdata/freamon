@@ -1,13 +1,12 @@
 ## freamon
 
-__Freamon__ enables data scientists to automatically reconstruct and query the intermediate data from ML pipelines to reduce the level of expertise and manual effort required to debug this data.
+__Freamon__ enables data scientists to automatically reconstruct and query the intermediate data from ML pipelines to reduce the level of expertise and manual effort required to debug this data. 
 
-<p align="left">
-  <img src="overview.png" width="350" alt="overview">
-</p>
+This repository contains a prototypical implementation for our abstract on _"Reconstructing and Querying ML Pipeline Intermediates"_ to be presented at [CIDR'23](https://www.cidrdb.org/cidr2023/index.html).
 
-We provide an [example notebook](view-reviews.ipynb) that shows how to capture and query the intermediates of a [complex ML pipeline with four different input sources](classify_amazon_reviews_sklearn.py). Freamon instruments the pipeline and tracks its provenance via an [optimized variant of mlinspect](https://github.com/stefan-grafberger/mlinspect/tree/lineage-opt), and subsequently reconstructs the intermediates based on the provenance.
+We provide notebooks to showcase provenance-based data debugging for a complex ML pipeline that learns to classify product reviews:
 
-This project is work in progress, and we already have a preliminary implementation for [pyspark pipelines](preliminary-views-for-pyspark.ipynb) as well. 
+ * The [sklearn/pandas example notebook]() shows how debug the data of the [ML pipeline](classify_amazonreviews_sklearn.py) implemented with sklearn and pandas.
+  * The [pyspark/sparkml example notebook]() shows how debug the data of the [ML pipeline](classify_amazonreviews_sparkml.py) implemented with pyspark and sparkml.
 
-We include example pipelines and datasets from the [OpenML](https://www.openml.org) project, the [dspipes](https://github.com/DS3Lab/datascope-pipelines) project of the [DS3Lab](https://github.com/DS3Lab) and from the [arguseyes](https://github.com/schelterlabs/arguseyes)/[mlinspect](https://github.com/stefan-grafberger/mlinspect) projects.
+
