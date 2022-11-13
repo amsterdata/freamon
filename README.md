@@ -6,7 +6,7 @@ This repository contains a prototypical implementation for our abstract on _"Rec
 
 We provide notebooks to showcase provenance-based data debugging for a complex ML pipeline that learns to classify product reviews:
 
- * The [sklearn/pandas example notebook]() shows how debug the data of the [ML pipeline](classify_amazonreviews_sklearn.py) implemented with sklearn and pandas.
-  * The [pyspark/sparkml example notebook]() shows how debug the data of the [ML pipeline](classify_amazonreviews_sparkml.py) implemented with pyspark and sparkml.
+ * The [sklearn/pandas example notebook](example-sklearn-pandas.ipynb) shows how debug the data of the [ML pipeline](classify_amazonreviews_sklearn.py) implemented with sklearn and pandas.
+  * The [pyspark/sparkml example notebook](example-sparkml.ipynb) shows how debug the data of the [ML pipeline](classify_amazonreviews_sparkml.py) implemented with pyspark and sparkml.
 
 
